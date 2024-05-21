@@ -1,9 +1,9 @@
-const videoService = require('../services/video_service');
+const db = require('../data/data_context');
 
 async function getVideoById(videoId) {
     try {
-        const videoRecord = await videoService.getVideoById(videoId);
-        return videoRecord ? videoRecord.data : null;
+        const [rows, fields] = await db.query('SELECT content FROM hypermedia_files WHERE id_hypermedia_file = ?;', [videoId]);
+        return rows[0];
     } catch (error) {
         console.error(`Unable to recover video, error occurred:`, error);
         throw error;
