@@ -11,7 +11,7 @@ const videoProto = grpc.loadPackageDefinition(packageDefinition);
 
 const server = new grpc.Server();
 server.addService(videoProto.VideoService.service, { streamVideo: streamVideoImpl });
-server.bindAsync(`localhost:${process.env.PORT}`, grpc.ServerCredentials.createInsecure(), () => {
+server.bindAsync(`0.0.0.0:${process.env.PORT}`, grpc.ServerCredentials.createInsecure(), () => {
     console.log(`Server gRPC started on ${process.env.PORT}`);
 });
 

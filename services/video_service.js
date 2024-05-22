@@ -1,9 +1,10 @@
 const db = require('../data/data_context');
 
-async function getVideoById(videoId) {
+const getVideoById = async function(videoId) {
     try {
-        const [rows, fields] = await db.query('SELECT content FROM hypermedia_files WHERE id_hypermedia_file = ?;', [videoId]);
-        return rows[0];
+        console.log("Si entre");
+        const [rows, fields] = await db.query(`SELECT content FROM hypermedia_files WHERE id_hypermedia_file = 1`);
+        return rows;
     } catch (error) {
         console.error(`Unable to recover video, error occurred:`, error);
         throw error;
