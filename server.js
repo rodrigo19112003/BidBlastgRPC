@@ -1,9 +1,9 @@
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 const dotenv = require('dotenv');
-const videoController = require('./controllers/video_controller');
-
 dotenv.config();
+
+const videoController = require('./controllers/video_controller');
 
 const PROTO_PATH = './proto/video.proto';
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
@@ -20,17 +20,18 @@ async function streamVideoImpl(call) {
 
     try {
         const videoData = await videoController.getVideoById(videoId);
-
-        if (!videoData) {
+        if (!videoData || !videoData.content) {
             return call.end();
         }
 
-        const chunkSize = 1024 * 1024;
+        const chunkSize = 1024;
+        const buffer = videoData.content;
 
-        for (let i = 0; i < videoData.length; i += chunkSize) {
-            const chunk = videoData.slice(i, i + chunkSize);
+        for (let i = 0; i < buffer.length; i += chunkSize) {
+            const chunk = buffer.slice(i, i + chunkSize);
             call.write({ chunk });
         }
+
         call.end();
     } catch (error) {
         console.error(`Unable to recover video with id ${videoId}, error occurred:`, error);
