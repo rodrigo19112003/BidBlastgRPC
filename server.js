@@ -24,12 +24,12 @@ async function streamVideoImpl(call) {
             return call.end();
         }
 
-        const chunkSize = 1024;
+        const chunkSize = 1024 * 1024;
         const buffer = videoData.content;
 
         for (let i = 0; i < buffer.length; i += chunkSize) {
             const chunk = buffer.slice(i, i + chunkSize);
-            call.write({ chunk });
+            call.write({ data: chunk });
         }
 
         call.end();
