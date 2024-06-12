@@ -10,7 +10,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const videoProto = grpc.loadPackageDefinition(packageDefinition);
 
 const server = new grpc.Server();
-server.addService(videoProto.VideoService.service, { streamVideo: streamVideoImpl });
+server.addService(videoProto.VideoService.service, { streamVideo: streamVideoImpl, uploadVideo: uploadVideoImpl });
 server.bindAsync(`0.0.0.0:${process.env.PORT}`, grpc.ServerCredentials.createInsecure(), () => {
     console.log(`Server gRPC started on ${process.env.PORT}`);
 });
@@ -37,4 +37,28 @@ async function streamVideoImpl(call) {
         console.error(`Unable to recover video with id ${videoId}, error occurred:`, error);
         call.end();
     }
+}
+async function uploadVideoImpl(call, callback) {
+    let videoData = Buffer.alloc(0);
+    let mimeType = "";
+    let auctionId = 0;
+
+    call.on('data', function(chunk) {
+        videoData = Buffer.concat([videoData, chunk.content]);
+        mimeType = chunk.mimeType;
+        auctionId = chunk.auctionId;
+    });
+
+    call.on('end', async function() {
+        try {
+            const videoId = await videoService.saveVideo(auctionId, mimeType, videoData);
+            callback(null, { message: 'Video uploaded successfully', videoId: videoId });
+        } catch (error) {
+            console.error('Error uploading video:', error);
+            callback({
+                code: grpc.status.INTERNAL,
+                message: 'Error uploading video'
+            });
+        }
+    });
 }
