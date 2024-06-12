@@ -9,9 +9,12 @@ const getVideoById = async function(videoId) {
         throw error;
     }
 }
-const saveVideo = async function(auctionId, mimeType, content) {
+const saveVideo = async function(auctionId, mimeType, content, name) {
     try {
-        const [result] = await db.query(`INSERT INTO hypermedia_files (mime_type, name, content, id_auction) VALUES (?, ?, ?, ?)`, [mimeType, null, content, auctionId]);
+        const [result] = await db.query(
+            `INSERT INTO hypermedia_files (mime_type, name, content, id_auction) VALUES (?, ?, ?, ?)`,
+            [mimeType, name, content, auctionId]
+        );
         return result.insertId;
     } catch (error) {
         console.error('Unable to save video, error occurred:', error);
