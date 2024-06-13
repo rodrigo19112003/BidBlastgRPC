@@ -10,7 +10,29 @@ const getVideoById = async function(videoId) {
         throw error;
     }
 }
+const saveVideo = async function(auctionId, mimeType, content, name) {
+    try {
+        const [result] = await db.query(
+            `INSERT INTO hypermedia_files (mime_type, name, content, id_auction) VALUES (?, ?, ?, ?)`,
+            [mimeType, name, content, auctionId]
+        );
+        return result.insertId;
+    } catch (error) {
+        throw error;
+    }
+};
+
+const checkAuctionExists = async function(auctionId) {
+    try {
+        const [rows, fields] = await db.query(`SELECT id_auction FROM auctions WHERE id_auction = ?`, [auctionId]);
+        return rows.length > 0;
+    } catch (error) {
+        throw error;
+    }
+};
 
 module.exports = {
-    getVideoById
+    getVideoById,
+    saveVideo,
+    checkAuctionExists
 };

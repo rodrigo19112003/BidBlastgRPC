@@ -9,7 +9,28 @@ async function getVideoById(videoId) {
         throw error;
     }
 }
+async function saveVideo(auctionId, mimeType, content, name) {
+    try {
+        const videoId = await videoService.saveVideo(auctionId, mimeType, content, name);
+        return videoId;
+    } catch (error) {
+        console.error("Error saving video", error);
+        throw error;
+    }
+}
+
+async function checkAuctionExists(auctionId) {
+    try {
+        const auctionExists = await videoService.checkAuctionExists(auctionId);
+        return auctionExists;
+    } catch (error) {
+        throw error;
+    }
+}
 
 module.exports = {
-    getVideoById
+    getVideoById,
+    saveVideo,
+    checkAuctionExists
 };
+

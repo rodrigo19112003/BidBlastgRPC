@@ -4,17 +4,23 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const videoController = require('./controllers/video_controller');
+const videoService = require('./services/video_service'); 
 
 const PROTO_PATH = './proto/video.proto';
-const packageDefinition = protoLoader.loadSync(PROTO_PATH);
-const videoProto = grpc.loadPackageDefinition(packageDefinition);
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+const videoProto = grpc.loadPackageDefinition(packageDefinition).VideoService;
 
 const server = new grpc.Server();
-server.addService(videoProto.VideoService.service, { streamVideo: streamVideoImpl });
+server.addService(videoProto.service, { streamVideo: streamVideoImpl, uploadVideo: uploadVideoImpl });
 server.bindAsync(`0.0.0.0:${process.env.PORT}`, grpc.ServerCredentials.createInsecure(), () => {
     console.log(`Server gRPC started on ${process.env.PORT}`);
 });
-
 async function streamVideoImpl(call) {
     const videoId = call.request.videoId;
 
@@ -42,3 +48,61 @@ async function streamVideoImpl(call) {
         call.end();
     }
 }
+async function uploadVideoImpl(call, callback) {
+    let videoData = Buffer.alloc(0);
+    let mimeType = "";
+    let auctionId = 0;
+    let name = "default_video_name";  
+
+    call.on('data', function(chunk) {
+        videoData = Buffer.concat([videoData, chunk.content]);
+        mimeType = chunk.mimeType;
+        auctionId = chunk.auctionId;
+        if (chunk.name) {
+            name = chunk.name; 
+        }
+    });
+
+    call.on('end', async function() {
+        if (!Number.isInteger(auctionId) || auctionId <= 0) {
+            return callback({
+                code: grpc.status.INVALID_ARGUMENT,
+                message: "Invalid auction ID"
+            });
+        }
+        if (mimeType !== 'video/x-msvideo') {
+            return callback({
+                code: grpc.status.INVALID_ARGUMENT,
+                message: "Invalid video format. Only 'video/x-msvideo' is accepted"
+            });
+        }
+
+        try {
+            const auctionExists = await videoController.checkAuctionExists(auctionId);
+            if (!auctionExists) {
+                return callback({
+                    code: grpc.status.NOT_FOUND,
+                    message: "Auction ID not found"
+                });
+            }
+
+            if (videoData.length > 5 * 1024 * 1024) {  
+                return callback({
+                    code: grpc.status.INVALID_ARGUMENT,
+                    message: "Video exceeds the maximum allowed size of 5 MB"
+                });
+            }
+
+            const videoId = await videoController.saveVideo(auctionId, mimeType, videoData, name);
+            callback(null, { message: "Video uploaded successfully", videoId: videoId });
+        } catch (error) {
+            callback({
+                code: grpc.status.INTERNAL,
+                message: "Error uploading video"
+            });
+        }
+    });
+}
+
+
+
