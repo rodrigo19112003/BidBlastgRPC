@@ -60,15 +60,45 @@ async function uploadVideoImpl(call, callback) {
     });
 
     call.on('end', async function() {
+        if (!Number.isInteger(auctionId) || auctionId <= 0) {
+            return callback({
+                code: grpc.status.INVALID_ARGUMENT,
+                message: "Invalid auction ID"
+            });
+        }
+        if (mimeType !== 'video/x-msvideo') {
+            return callback({
+                code: grpc.status.INVALID_ARGUMENT,
+                message: "Invalid video format. Only 'video/x-msvideo' is accepted"
+            });
+        }
+
         try {
+            const auctionExists = await videoController.checkAuctionExists(auctionId);
+            if (!auctionExists) {
+                return callback({
+                    code: grpc.status.NOT_FOUND,
+                    message: "Auction ID not found"
+                });
+            }
+
+            if (videoData.length > 5 * 1024 * 1024) {  
+                return callback({
+                    code: grpc.status.INVALID_ARGUMENT,
+                    message: "Video exceeds the maximum allowed size of 5 MB"
+                });
+            }
+
             const videoId = await videoController.saveVideo(auctionId, mimeType, videoData, name);
-            callback(null, { message: 'Video uploaded successfully', videoId: videoId });
+            callback(null, { message: "Video uploaded successfully", videoId: videoId });
         } catch (error) {
-            console.error('Error uploading video:', error);
             callback({
                 code: grpc.status.INTERNAL,
-                message: 'Error uploading video'
+                message: "Error uploading video"
             });
         }
     });
 }
+
+
+
