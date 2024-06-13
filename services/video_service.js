@@ -17,12 +17,21 @@ const saveVideo = async function(auctionId, mimeType, content, name) {
         );
         return result.insertId;
     } catch (error) {
-        console.error('Unable to save video, error occurred:', error);
+        throw error;
+    }
+};
+
+const checkAuctionExists = async function(auctionId) {
+    try {
+        const [rows, fields] = await db.query(`SELECT id_auction FROM auctions WHERE id_auction = ?`, [auctionId]);
+        return rows.length > 0;
+    } catch (error) {
         throw error;
     }
 };
 
 module.exports = {
     getVideoById,
-    saveVideo
+    saveVideo,
+    checkAuctionExists
 };
