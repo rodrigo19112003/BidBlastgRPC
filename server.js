@@ -24,6 +24,10 @@ server.bindAsync(`0.0.0.0:${process.env.PORT}`, grpc.ServerCredentials.createIns
 async function streamVideoImpl(call) {
     const videoId = call.request.videoId;
 
+    if (typeof videoId !== 'number' || isNaN(videoId)) {
+        return call.end();
+    }    
+
     try {
         const videoData = await videoController.getVideoById(videoId);
         if (!videoData || !videoData.content) {
