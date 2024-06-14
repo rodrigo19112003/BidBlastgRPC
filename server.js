@@ -70,10 +70,10 @@ async function uploadVideoImpl(call, callback) {
                 message: "Invalid auction ID"
             });
         }
-        if (mimeType !== 'video/x-msvideo') {
+        if (mimeType !== 'video/mp4') {
             return callback({
                 code: grpc.status.INVALID_ARGUMENT,
-                message: "Invalid video format. Only 'video/x-msvideo' is accepted"
+                message: "Invalid video format. Only 'video/mp4' is accepted"
             });
         }
 
